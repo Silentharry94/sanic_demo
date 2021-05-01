@@ -83,10 +83,10 @@ async def after_server_start(app: Sanic, loop):
     :return:
     """
     lock_key = "pre_sync_config_table_lock"
-    r_lock = await app.ctx.controller.redis.setnx(lock_key, str_now())
+    r_lock = await app.ctx.controller.redis.set(
+        lock_key, str_now(), expire=10, exist="SET_IF_NOT_EXIST")
     if r_lock:
-        PreTable(app.name, app.router.routes.values())
-        await app.ctx.controller.redis.expire(lock_key, 10)
+        PreTable(app.name, app.router.routes)
     logging.debug(f"{inspect.stack()[0].function} done")
 
 

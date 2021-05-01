@@ -6,7 +6,7 @@
 # @File    : service.py
 # @Desc    :
 
-from library.common import singleton, Common, AsyncClientSession, create_async_session
+from library.common import singleton, Common, AsyncClientSession
 from util.async_db import AsyncMySQLConnect, AsyncManager, AsyncMongodbConnect, AsyncRedis
 
 
@@ -17,10 +17,9 @@ class Service:
         mongo_config = Common.yaml_config("mongo")
         redis_config = Common.yaml_config("redis")
         mysql_config = Common.yaml_config("mysql")
-        _session = await create_async_session()
         mysql_database = AsyncMySQLConnect.init_db(mysql_config)
 
-        self.client = AsyncClientSession(_session)
+        self.client = await AsyncClientSession().init_session()
         self.redis = await AsyncRedis(redis_config).init_db()
         self.mongo = AsyncMongodbConnect(mongo_config).client
         self.mysql = AsyncManager(mysql_database)

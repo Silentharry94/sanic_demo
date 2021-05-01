@@ -79,21 +79,6 @@ def singleton(cls):
     return _singleton
 
 
-async def create_async_session(**kwargs) -> ClientSession:
-    """
-    aiohttp client session
-    :return:
-    """
-    tcp_connector = TCPConnector(
-        keepalive_timeout=600,
-        ssl=False,
-        limit=0,
-        limit_per_host=300,
-        **kwargs
-    )
-    return ClientSession(connector=tcp_connector)
-
-
 class Common(object):
 
     @staticmethod
@@ -464,14 +449,28 @@ class AsyncClientSession:
     """
     async aiohttp client
     """
+    __slots__ = (
+        "session",
+    )
 
     def __new__(cls, *args, **kwargs):
         if not hasattr(cls, '_instance'):
             cls._instance = super(AsyncClientSession, cls).__new__(cls)
         return cls._instance
 
-    def __init__(self, session: ClientSession):
-        self.session = session
+    async def init_session(self, **kwargs) -> ClientSession:
+        """
+        aiohttp client session
+        :return:
+        """
+        tcp_connector = TCPConnector(
+            keepalive_timeout=15,
+            limit=600,
+            limit_per_host=300,
+            **kwargs
+        )
+        self.session = ClientSession(connector=tcp_connector)
+        return self.session
 
     @retry(tries=3, logger=logging)
     async def request(self, method, url, **kwargs):

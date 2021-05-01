@@ -22,6 +22,20 @@ from util.async_db import AsyncMongodbConnect
 test_bp = Blueprint("test_group", url_prefix="/test")
 
 
+@test_bp.route('/fetch', methods={"GET", "POST"})
+@uri_check()
+async def fetch(request: BaseRequest):
+    """
+    ping handler
+    :param request:
+    :return:
+    """
+    
+    url = "https://api.bilibili.com/x/web-frontend/data/collector"
+    res = await request.aio_client.fetch_json("GET", url)
+    return Response(data=res)
+
+
 @test_bp.route('/ping', methods={"GET", "POST"})
 @uri_check()
 async def ping(request: BaseRequest):
