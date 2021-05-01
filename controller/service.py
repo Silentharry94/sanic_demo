@@ -18,8 +18,9 @@ class Service:
         redis_config = Common.yaml_config("redis")
         mysql_config = Common.yaml_config("mysql")
         mysql_database = AsyncMySQLConnect.init_db(mysql_config)
-
-        self.client = await AsyncClientSession().init_session()
+        session_client = AsyncClientSession()
+        await session_client.init_session()
+        self.client = session_client
         self.redis = await AsyncRedis(redis_config).init_db()
         self.mongo = AsyncMongodbConnect(mongo_config).client
         self.mysql = AsyncManager(mysql_database)
