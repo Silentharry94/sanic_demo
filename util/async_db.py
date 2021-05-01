@@ -7,6 +7,7 @@
 # @Desc    : 异步mongodb|异步mysql
 
 import os
+from urllib.parse import quote_plus
 
 import aioredis
 from aioredis import Redis
@@ -21,7 +22,7 @@ from library.initlog import logging
 class AsyncMongodbConnect:
     """
     motor多连接
-    peer_conn = pid + host + port
+    peer_conn = pid + host + port + user
     """
     __conn = {}
 
@@ -38,16 +39,40 @@ class AsyncMongodbConnect:
         config_client = {}
         self.pid = os.getpid()
         self.peer_conn = "_".join([
-            str(self.pid), self.config["host"], str(self.config["port"])])
+            str(self.pid), self.config["host"],
+            str(self.config["port"]), self.config["user"]])
         if not self.__conn.get(self.peer_conn):
-            self.config = self.config
-            self.client = AsyncIOMotorClient(**self.config)
+            url = self._connect_url()
+            self.client = AsyncIOMotorClient(url, serverSelectionTimeoutMS=5000)
             config_client.setdefault("config", self.config)
             config_client.setdefault("client", self.client)
             self.__conn.setdefault(self.peer_conn, config_client)
         else:
             self.client = self.__conn[self.peer_conn]["client"]
             self.config = self.__conn[self.peer_conn]["config"]
+
+    def _connect_url(self):
+        url = "mongodb://"
+        domain = "{host}:{port}/".format(
+            host=self.config["host"], port=self.config["port"]
+        )
+
+        if self.config["user"] and self.config["password"] and self.config["auth_db"]:
+            authentication = "{username}:{password}@".format(
+                username=quote_plus(self.config["user"]),
+                password=quote_plus(self.config["password"])
+            )
+            domain = "{host}:{port}/".format(
+                host=self.config["host"],
+                port=self.config["port"]
+            )
+            param = "?authSource={auth_db}".format(
+                auth_db=self.config["auth_db"]
+            )
+            url = "".join([url, authentication, domain, param])
+        else:
+            url = "".join([url, domain])
+        return url
 
 
 class AsyncMySQLConnect(ReconnectMixin, PooledMySQLDatabase):
